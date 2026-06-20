@@ -14,6 +14,7 @@ public class App {
         FlappyBird flappyBird = new FlappyBird();
         frame.add(flappyBird);
         frame.pack();
+        flappyBird.requestFocus(null);
         frame.setVisible(true);
     }
 }

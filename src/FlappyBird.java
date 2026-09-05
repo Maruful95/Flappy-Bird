@@ -68,6 +68,12 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
   boolean gameOver = false;
   double score = 0;
 
+  // Game states
+  final int START = 0;
+  final int PLAYING = 1;
+  final int GAME_OVER = 2;
+  int gameState = START;
+
   FlappyBird() {
     setPreferredSize(new Dimension(boardWidth, boardHeight));
     setFocusable(true);
@@ -99,7 +105,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
         }
       }
     );
-    placedPipesTimer.start();
+    // placedPipesTimer.start();
 
     // game timer
     gameLoop = new javax.swing.Timer(1000 / 60, this);
@@ -139,17 +145,46 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
       g.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height, null);
     }
 
-    // score
-    g.setColor(Color.WHITE);
-    g.setFont(new Font("Arial", Font.BOLD, 24));
-    if (gameOver) {
-      g.drawString("Game Over! Score: " + (int) score, 10, 30);
+    // Start screen
+    if (gameState == START) {
+      drawStartScreen(g);
+    }
+
+    // Game Over screen
+    if (gameState == GAME_OVER) {
+      drawGameOverScreen(g);
     } else {
+      // Score
+      g.setColor(Color.WHITE);
+      g.setFont(new Font("Arial", Font.BOLD, 24));
       g.drawString("Score: " + (int) score, 10, 30);
     }
   }
 
+  // Start screen
+  public void drawStartScreen(Graphics g) {
+    g.setColor(Color.WHITE);
+    g.setFont(new Font("Arial", Font.BOLD, 36));
+    g.drawString("FLAPPY BIRD", 75, 220);
+    g.setFont(new Font("Arial", Font.PLAIN, 20));
+    g.drawString("Press SPACE to start", 85, 300);
+    g.drawString("Avoid the pipes!", 105, 380);
+  }
+
+  // Game over screen
+  public void drawGameOverScreen(Graphics g) {
+    g.setColor(Color.WHITE);
+    g.setFont(new Font("Arial", Font.BOLD, 30));
+    g.drawString("GAME OVER", 100, 250);
+    g.setFont(new Font("Arial", Font.PLAIN, 20));
+    g.drawString("Score: " + (int) score, 130, 300);
+    g.drawString("Press SPACE to restart", 80, 350);
+  }
+
   public void move() {
+    if (gameState != PLAYING) {
+      return;
+    }
     velocityY += gravity;
     bird.y += velocityY;
     bird.y = Math.max(0, bird.y);
@@ -166,10 +201,12 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
       if (collision(bird, pipe)) {
         gameOver = true;
+        gameState = GAME_OVER;
       }
 
       if (bird.y > boardHeight - bird.height) {
         gameOver = true;
+        gameState = GAME_OVER;
       }
     }
   }
@@ -196,6 +233,14 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
   @Override
   public void keyPressed(KeyEvent e) {
     if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+      // Start the game
+      if (gameState == START) {
+        gameState = PLAYING;
+        placedPipesTimer.start();
+        velocityY = -10;
+        return;
+      }
+
       if (gameOver) {
         // reset game
         bird.y = birdY;
@@ -203,8 +248,10 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
         pipes.clear();
         score = 0;
         gameOver = false;
+        gameState = PLAYING;
         placedPipesTimer.start();
         gameLoop.start();
+        return;
       }
       velocityY = -10;
     }

@@ -320,11 +320,13 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     g2.setColor(Color.WHITE);
     g2.setFont(new Font("Arial", Font.BOLD, 42));
 
+    g2.setColor(Color.RED);
     String gameOverText = "GAME OVER";
     int textWidth = g2.getFontMetrics().stringWidth(gameOverText);
 
     g2.drawString(gameOverText, (boardWidth - textWidth) / 2, 250);
 
+    g2.setColor(Color.WHITE);
     g2.setFont(new Font("Arial", Font.BOLD, 28));
 
     String scoreText = "Score: " + score;

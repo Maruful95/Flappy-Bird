@@ -1,4 +1,3 @@
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -21,6 +20,8 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
   // Sounds
   Clip flapSound;
+  Clip hitSound;
+  Clip scoreSound;
 
   // Bird
   int birdX = boardWidth / 8;
@@ -86,7 +87,6 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
   int gameState = START;
 
   public static void main(String[] args) {
-
     JFrame frame = new JFrame("Flappy Bird");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setResizable(false);
@@ -102,7 +102,6 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
   }
 
   FlappyBird() {
-
     setPreferredSize(new Dimension(boardWidth, boardHeight));
     setFocusable(true);
     addKeyListener(this);
@@ -116,9 +115,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
       getClass().getResource("./flappybird.png")
     ).getImage();
 
-    topPipe = new ImageIcon(
-      getClass().getResource("./toppipe.png")
-    ).getImage();
+    topPipe = new ImageIcon(getClass().getResource("./toppipe.png")).getImage();
 
     bottomPipe = new ImageIcon(
       getClass().getResource("./bottompipe.png")
@@ -149,28 +146,35 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     gameLoop.start();
   }
 
-  // Load flap sound
-  public void loadSounds() {
-
+  // Load sound
+  private void loadSounds() {
     try {
+      // Flap sound
+      URL flapURL = getClass().getResource("/sounds/flap.wav");
 
-      URL flapSoundURL = getClass().getResource("./sounds/flap.wav");
-
-      if (flapSoundURL == null) {
-        System.out.println("Flap sound file not found!");
-        return;
+      if (flapURL != null) {
+        flapSound = AudioSystem.getClip();
+        flapSound.open(AudioSystem.getAudioInputStream(flapURL));
+        System.out.println("Flap sound loaded.");
       }
 
-      AudioInputStream audioInputStream =
-        AudioSystem.getAudioInputStream(flapSoundURL);
+      // Hit sound
+      URL hitURL = getClass().getResource("/sounds/hit.wav");
 
-      flapSound = AudioSystem.getClip();
-      flapSound.open(audioInputStream);
+      if (hitURL != null) {
+        hitSound = AudioSystem.getClip();
+        hitSound.open(AudioSystem.getAudioInputStream(hitURL));
+        System.out.println("Hit sound loaded.");
+      }
 
-      audioInputStream.close();
+      // Score sound
+      URL scoreURL = getClass().getResource("/sounds/score.wav");
 
-      System.out.println("Flap sound loaded successfully!");
-
+      if (scoreURL != null) {
+        scoreSound = AudioSystem.getClip();
+        scoreSound.open(AudioSystem.getAudioInputStream(scoreURL));
+        System.out.println("Score sound loaded.");
+      }
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -178,7 +182,6 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
   // Play flap sound
   public void playFlapSound() {
-
     if (flapSound == null) {
       return;
     }
@@ -188,14 +191,29 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     flapSound.start();
   }
 
+  // Play hit sound
+  private void playHitSound() {
+    if (hitSound != null) {
+      hitSound.stop();
+      hitSound.setFramePosition(0);
+      hitSound.start();
+    }
+  }
+
+  // Play score sound
+  private void playScoreSound() {
+    if (scoreSound != null) {
+      scoreSound.stop();
+      scoreSound.setFramePosition(0);
+      scoreSound.start();
+    }
+  }
+
   // Create pipes
   public void placedPipes() {
-
-    int randomPipeY = (int) (
-      pipeY -
+    int randomPipeY = (int) (pipeY -
       pipeHeight / 4 -
-      Math.random() * (pipeHeight / 2)
-    );
+      Math.random() * (pipeHeight / 2));
 
     int openingSpace = boardHeight / 4;
 
@@ -210,22 +228,13 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
   @Override
   public void paintComponent(Graphics g) {
-
     super.paintComponent(g);
     draw(g);
   }
 
   public void draw(Graphics g) {
-
     // Background
-    g.drawImage(
-      background,
-      0,
-      0,
-      boardWidth,
-      boardHeight,
-      null
-    );
+    g.drawImage(background, 0, 0, boardWidth, boardHeight, null);
 
     // Bird animation
     Graphics2D g2 = (Graphics2D) g.create();
@@ -234,37 +243,18 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
     AffineTransform oldTransform = g2.getTransform();
 
-    g2.rotate(
-      angle,
-      bird.x + bird.width / 2,
-      bird.y + bird.height / 2
-    );
+    g2.rotate(angle, bird.x + bird.width / 2, bird.y + bird.height / 2);
 
-    g2.drawImage(
-      bird.img,
-      bird.x,
-      bird.y,
-      bird.width,
-      bird.height,
-      null
-    );
+    g2.drawImage(bird.img, bird.x, bird.y, bird.width, bird.height, null);
 
     g2.setTransform(oldTransform);
     g2.dispose();
 
     // Pipes
     for (int i = 0; i < pipes.size(); i++) {
-
       Pipe pipe = pipes.get(i);
 
-      g.drawImage(
-        pipe.img,
-        pipe.x,
-        pipe.y,
-        pipe.width,
-        pipe.height,
-        null
-      );
+      g.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height, null);
     }
 
     // Start screen
@@ -274,52 +264,86 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
     // Game Over screen
     if (gameState == GAME_OVER) {
-
       drawGameOverScreen(g);
-
     } else {
-
       // Score
       g.setColor(Color.WHITE);
       g.setFont(new Font("Arial", Font.BOLD, 24));
 
-      g.drawString(
-        "Score: " + (int) score,
-        10,
-        30
-      );
+      g.drawString("Score: " + (int) score, 10, 30);
     }
   }
 
   // Start screen
-  public void drawStartScreen(Graphics g) {
+  private void drawStartScreen(Graphics g) {
+    Graphics2D g2 = (Graphics2D) g.create();
 
-    g.setColor(Color.WHITE);
+    g2.setColor(new Color(0, 0, 0, 100));
+    g2.fillRect(0, 0, boardWidth, boardHeight);
 
-    g.setFont(new Font("Arial", Font.BOLD, 36));
-    g.drawString("FLAPPY BIRD", 75, 220);
+    g2.setColor(Color.WHITE);
+    g2.setFont(new Font("Arial", Font.BOLD, 42));
 
-    g.setFont(new Font("Arial", Font.PLAIN, 20));
-    g.drawString("Press SPACE to start", 85, 300);
-    g.drawString("Avoid the pipes!", 105, 380);
+    String title = "FLAPPY BIRD";
+    int titleWidth = g2.getFontMetrics().stringWidth(title);
+
+    g2.drawString(title, (boardWidth - titleWidth) / 2, 220);
+
+    g2.setFont(new Font("Arial", Font.BOLD, 22));
+
+    String instruction = "Press SPACE to Start";
+    int instructionWidth = g2.getFontMetrics().stringWidth(instruction);
+
+    g2.drawString(instruction, (boardWidth - instructionWidth) / 2, 320);
+
+    g2.setFont(new Font("Arial", Font.PLAIN, 18));
+
+    String controlText = "SPACE = Flap";
+    int controlWidth = g2.getFontMetrics().stringWidth(controlText);
+
+    g2.drawString(controlText, (boardWidth - controlWidth) / 2, 360);
+
+    String objectiveText = "Avoid the pipes!";
+    int objectiveWidth = g2.getFontMetrics().stringWidth(objectiveText);
+
+    g2.drawString(objectiveText, (boardWidth - objectiveWidth) / 2, 390);
+    g2.dispose();
   }
 
   // Game Over screen
-  public void drawGameOverScreen(Graphics g) {
+  private void drawGameOverScreen(Graphics g) {
+    Graphics2D g2 = (Graphics2D) g.create();
 
-    g.setColor(Color.WHITE);
+    g2.setColor(new Color(0, 0, 0, 150));
+    g2.fillRect(0, 0, boardWidth, boardHeight);
 
-    g.setFont(new Font("Arial", Font.BOLD, 30));
-    g.drawString("GAME OVER", 100, 250);
+    g2.setColor(Color.WHITE);
+    g2.setFont(new Font("Arial", Font.BOLD, 42));
 
-    g.setFont(new Font("Arial", Font.PLAIN, 20));
-    g.drawString("Score: " + (int) score, 130, 300);
-    g.drawString("Press SPACE to restart", 80, 350);
+    String gameOverText = "GAME OVER";
+    int textWidth = g2.getFontMetrics().stringWidth(gameOverText);
+
+    g2.drawString(gameOverText, (boardWidth - textWidth) / 2, 250);
+
+    g2.setFont(new Font("Arial", Font.BOLD, 28));
+
+    String scoreText = "Score: " + score;
+    int scoreWidth = g2.getFontMetrics().stringWidth(scoreText);
+
+    g2.drawString(scoreText, (boardWidth - scoreWidth) / 2, 310);
+
+    g2.setFont(new Font("Arial", Font.BOLD, 20));
+
+    String restartText = "Press SPACE to Restart";
+    int restartWidth = g2.getFontMetrics().stringWidth(restartText);
+
+    g2.drawString(restartText, (boardWidth - restartWidth) / 2, 370);
+
+    g2.dispose();
   }
 
   // Update game movement
   public void move() {
-
     if (gameState != PLAYING) {
       return;
     }
@@ -333,14 +357,12 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
     // Increase pipe speed with score
     currentSpeed = -4 - ((int) score / 5);
 
-    // Maximum speed
     if (currentSpeed < -8) {
       currentSpeed = -8;
     }
 
     // Pipes
     for (int i = 0; i < pipes.size(); i++) {
-
       Pipe pipe = pipes.get(i);
 
       // Move pipe
@@ -348,21 +370,21 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
       // Increase score
       if (!pipe.passed && bird.x > pipe.x + pipe.width) {
-
         score += 0.5;
         pipe.passed = true;
+        if (score % 5 == 0) {
+          playScoreSound();
+        }
       }
 
       // Collision detection
       if (collision(bird, pipe)) {
-
+        playHitSound();
         gameOver = true;
         gameState = GAME_OVER;
       }
 
-      // Remove pipes outside the screen
       if (pipe.x + pipe.width < 0) {
-
         pipes.remove(i);
         i--;
       }
@@ -370,7 +392,7 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
     // Bottom boundary
     if (bird.y > boardHeight - bird.height) {
-
+      playHitSound();
       gameOver = true;
       gameState = GAME_OVER;
     }
@@ -378,7 +400,6 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
   // Collision detection
   public boolean collision(Bird a, Pipe b) {
-
     return (
       a.x < b.x + b.width &&
       a.x + a.width > b.x &&
@@ -389,12 +410,10 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
   @Override
   public void actionPerformed(ActionEvent e) {
-
     move();
     repaint();
 
     if (gameOver) {
-
       placedPipesTimer.stop();
       gameLoop.stop();
     }
@@ -402,12 +421,9 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
   @Override
   public void keyPressed(KeyEvent e) {
-
     if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-
       // Start the game
       if (gameState == START) {
-
         gameState = PLAYING;
         placedPipesTimer.start();
 
@@ -419,7 +435,6 @@ public class FlappyBird extends JPanel implements ActionListener, KeyListener {
 
       // Restart after Game Over
       if (gameOver) {
-
         bird.y = birdY;
         velocityY = 0;
 
